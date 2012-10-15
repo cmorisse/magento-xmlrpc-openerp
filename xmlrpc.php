@@ -40,11 +40,27 @@ class Mage_Shell_XMLRPC_Tester extends Mage_Shell_Abstract
      */
     public function run()
     {
-        $OPENERP_SERVER_HOST= "localhost";
-        $OPENERP_SERVER_PORT= "8069";
-        $OPENERP_USERNAME   = "admin";
-        $OPENERP_PASSWORD   = "velo=615";
-        $OPENERP_DATABASE   = "v2_eo_mono_s41";
+        if ($this->getArg('help')) {
+            echo $this->usageHelp();
+            return;
+        }
+
+        $OPENERP_SERVER_HOST= $_ENV['XMLRPC_OE_MAGE_HOST'];
+        $OPENERP_SERVER_PORT= $_ENV['XMLRPC_OE_MAGE_PORT'];
+        $OPENERP_USERNAME   = $_ENV['XMLRPC_OE_MAGE_USERNAME'];
+        $OPENERP_PASSWORD   = $_ENV['XMLRPC_OE_MAGE_PASSWORD'];
+        $OPENERP_DATABASE   = $_ENV['XMLRPC_OE_MAGE_DATABASE'];
+
+        $undefined_param =    is_null($OPENERP_SERVER_HOST)
+                            || is_null($OPENERP_SERVER_PORT)
+                            || is_null($OPENERP_USERNAME)
+                            || is_null($OPENERP_PASSWORD)
+                            || is_null($OPENERP_DATABASE);
+
+        if ($this->getArg('help') || $undefined_param ) {
+            echo $this->usageHelp();
+            return;
+        }
 
         /******
          * step 1 : login
@@ -88,26 +104,22 @@ class Mage_Shell_XMLRPC_Tester extends Mage_Shell_Abstract
 
         /*****
          * step 3
-         * A partir de la liste d'ids des shops, on récupère les infos
-         * que l'on ajoute dans $shop_array
+         * A partir de la liste d'ids des shops, on récupère les infos des shops
          */
-        $shop_array = array();
-        foreach($shop_array_ids as $shop_id) {
-            $request->setMethod('execute');
-            $params = array(
-                $OPENERP_DATABASE,  // OPENERP_DATABASE
-                $uid,              // !!!! uid not OPENERP_USERNAME
-                $OPENERP_PASSWORD,
-                "sale.shop",       // object
-                "read",            // method
-                $shop_id,          // $is de la boutique dont on veut les informations
-                null               // liste des champs : null = tous
-            );
-            $request->setParams($params);
-            $client_object->doRequest($request);
-            $response = $client_object->getLastResponse();
-            $shop_array[] = $response->getReturnValue();
-        }
+        $request->setMethod('execute');
+        $params = array(
+            $OPENERP_DATABASE, // OPENERP_DATABASE
+            $uid,              // !!!! uid not OPENERP_USERNAME
+            $OPENERP_PASSWORD,
+            "sale.shop",       // object
+            "read",            // method
+            $shop_array_ids,   // [ids] de la boutique dont on veut les informations
+            null               // liste des champs; null = tous
+        );
+        $request->setParams($params);
+        $client_object->doRequest($request);
+        $response = $client_object->getLastResponse();
+        $shop_array = $response->getReturnValue();
 
         echo count($shop_array) . " shops trouvés:\n";
         foreach( $shop_array as $shop ) {
@@ -121,8 +133,18 @@ class Mage_Shell_XMLRPC_Tester extends Mage_Shell_Abstract
     public function usageHelp()
     {
         return <<<USAGE
+
 Usage:  php -f xmlrpc.php -- [options]
   help                         Print this help
+
+  Avant de lancer le script, pensez à définir les variables d'environnement suivantes ou à modifier le code au début de run():
+
+    XMLRPC_OE_MAGE_HOST         ex: localhost
+    XMLRPC_OE_MAGE_PORT         ex: 8069
+    XMLRPC_OE_MAGE_USERNAME     ex: admin
+    XMLRPC_OE_MAGE_PASSWORD     ex: password
+    XMLRPC_OE_MAGE_DATABASE     ex: mydb
+
 
 USAGE;
     }
