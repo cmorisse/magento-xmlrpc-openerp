@@ -8,7 +8,7 @@ Cet exemple affiche tous les Sale Shops définis dans une instance.
 Prérequis
 _________
 
-Ce code à été ecris pour Magento 1.7.
+Ce code a été écrit pour Magento 1.7.
 
 Utilisation
 ___________
